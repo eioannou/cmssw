@@ -5,6 +5,7 @@ import PhysicsTools.PatAlgos.tools.helpers as configtools
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask, addToProcessAndTask
 from PhysicsTools.PatAlgos.tools.jetTools import switchJetCollection
 
+# Test for commit github
 
 def isValidInputTag(input):
     input_str = input
@@ -88,7 +89,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
                           "Technical parameter to identify the resulting sequence and its modules (allows multiple calls in a job)", Type=str)
         self.addParameter(self._defaultParameters,'fixEE2017', False,
                           "Exclude jets and PF candidates with EE noise characteristics (fix for 2017 run)", Type=bool)
-        self.addParameter(self._defaultParameters,'fixEE2017Params', {'userawPt': True, 'PtThreshold': 50.0, 'MinEtaThreshold': 2.65, 'MaxEtaThreshold': 3.139},
+        self.addParameter(self._defaultParameters,'fixEE2017Params', {'userawPt': True, 'PtThreshold': 75.0, 'MinEtaThreshold': 2.5, 'MaxEtaThreshold': 3.139},
                           "Parameters dict for fixEE2017: userawPt, PtThreshold, MinEtaThreshold, MaxEtaThreshold", Type=dict)
 
         #private parameters
