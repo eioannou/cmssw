@@ -91,6 +91,8 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         self.addParameter(self._defaultParameters,'fixEE2017Params', {'userawPt': True, 'PtThreshold': 50.0, 'MinEtaThreshold': 2.65, 'MaxEtaThreshold': 3.139},
                           "Parameters dict for fixEE2017: userawPt, PtThreshold, MinEtaThreshold, MaxEtaThreshold", Type=dict)
 
+        self.addParameter(self._defaultParameters, 'skipEMfractionParam', cms.double(0.9),
+                          "EM fraction Threshold", Type=cms.double, acceptNoneValue = True)  
         #private parameters
         self.addParameter(self._defaultParameters, 'Puppi', False,
                           "Puppi algorithm (private)", Type=bool)
@@ -135,6 +137,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
                  onMiniAOD               =None,
                  fixEE2017               =None,
                  fixEE2017Params         =None,
+                 skipEMfractionParam     =None,
                  postfix                 =None):
         electronCollection = self.initializeInputTag(electronCollection, 'electronCollection')
         photonCollection = self.initializeInputTag(photonCollection, 'photonCollection')
@@ -208,6 +211,8 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
             fixEE2017 = self._defaultParameters['fixEE2017'].value
         if fixEE2017Params is None :
             fixEE2017Params = self._defaultParameters['fixEE2017Params'].value
+        if skipEMfractionParam is None :
+            skipEMfractionParam = self._defaultParameters['skipEMfractionParam'].value
 
         self.setParameter('metType',metType),
         self.setParameter('correctionLevel',correctionLevel),
@@ -241,6 +246,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         self.setParameter('postfix',postfix),
         self.setParameter('fixEE2017',fixEE2017),
         self.setParameter('fixEE2017Params',fixEE2017Params),
+        self.setParameter('skipEMfractionParam', skipEMfractionParam),
 
         #if mva/puppi MET, autoswitch to std jets
         if metType == "MVA" or metType == "Puppi":
@@ -309,6 +315,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         postfix                 = self._parameters['postfix'].value
         fixEE2017               = self._parameters['fixEE2017'].value
         fixEE2017Params         = self._parameters['fixEE2017Params'].value
+        skipEMfractionParam     = self._parameters['skipEMfractionParam'].value
         
         #prepare jet configuration
         jetUncInfos = { "jCorrPayload":jetFlavor, "jCorLabelUpToL3":jetCorLabelUpToL3,
@@ -363,6 +370,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
                                                             jetSelection,
                                                             autoJetCleaning,
                                                             patMetModuleSequence,
+                                                            skipEMfractionParam,
                                                             postfix)
         
         #pre-preparation to run over miniAOD 
@@ -1433,7 +1441,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
 
 
     def getJetCollectionForCorsAndUncs(self, process, jetCollectionUnskimmed, 
-                                       jetSelection, autoJetCleaning,patMetModuleSequence, postfix):
+                                       jetSelection, autoJetCleaning,patMetModuleSequence, skipEMfractionParam, postfix):
 
         task = getPatAlgosToolsTask(process)
 
@@ -1444,7 +1452,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
                                          jetCorrLabelRes = cms.InputTag("L2L3Residual"),
                                          offsetCorrLabel = cms.InputTag("L1FastJet"),
                                          skipEM = cms.bool(True),
-                                         skipEMfractionThreshold = cms.double(0.9),
+                                         skipEMfractionThreshold = skipEMfractionParam,
                                          skipMuonSelection = cms.string('isGlobalMuon | isStandAloneMuon'),
                                          skipMuons = cms.bool(True),
                                          type1JetPtThreshold = cms.double(15.0)
@@ -1932,6 +1940,7 @@ def runMetCorAndUncFromMiniAOD(process, metType="PF",
                                computeMETSignificance=True,
                                fixEE2017=False,
                                fixEE2017Params=None,
+                               skipEMfractionParam = None,
                                postfix=""):
 
     runMETCorrectionsAndUncertainties = RunMETCorrectionsAndUncertainties()
@@ -1965,6 +1974,7 @@ def runMetCorAndUncFromMiniAOD(process, metType="PF",
                                       postfix=postfix,
                                       fixEE2017=fixEE2017,
                                       fixEE2017Params=fixEE2017Params,
+                                      skipEMfractionParam = skipEMfractionParam,
                                       )
     
     #MET T1+Txy / Smear
@@ -1996,6 +2006,7 @@ def runMetCorAndUncFromMiniAOD(process, metType="PF",
                                       postfix=postfix,
                                       fixEE2017=fixEE2017,
                                       fixEE2017Params=fixEE2017Params,
+                                      skipEMfractionParam = skipEMfractionParam,
                                       )
     #MET T1+Smear + uncertainties
     runMETCorrectionsAndUncertainties(process, metType=metType,
@@ -2026,4 +2037,5 @@ def runMetCorAndUncFromMiniAOD(process, metType="PF",
                                       postfix=postfix,
                                       fixEE2017=fixEE2017,
                                       fixEE2017Params=fixEE2017Params,
+                                      skipEMfractionParam = skipEMfractionParam,
                                       )
