@@ -869,7 +869,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
                                   src = pfCandCollection,
                                   cut = cms.string("fromPV > 1")
                                   )
-        addToProcessAndTask("pfNoPileUp"+postfix, pfNopileUp, process, task)
+        addToProcessAndTask("pfNoPileUp"+postfix, pfNoPileUp, process, task)
         metUncSequence += getattr(process, "pfNoPileUp"+postfix)
 
         pfPhotons = cms.EDFilter("CandPtrSelector",
