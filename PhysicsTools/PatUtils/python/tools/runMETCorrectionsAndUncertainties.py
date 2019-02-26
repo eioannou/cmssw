@@ -866,7 +866,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         # PFPhotons :
         #------------
         pfNoPileUp = cms.EDFilter("CandPtrSelector",
-                                  src = pfCandColection,
+                                  src = pfCandCollection,
                                   cut = cms.string("fromPV > 1")
                                   )
         addToProcessAndTask("pfNoPileUp"+postfix, pfNopileUp, process, task)
