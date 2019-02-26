@@ -829,6 +829,62 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         #===================================================================================
         # energy shifts
         #===================================================================================
+        # PF Muons, PF Electrons, PF Photons, and PF Taus will be used
+        # to calculate MET Uncertainties.
+        #===================================================================================
+        #--------------
+        # PFElectrons :
+        #--------------
+        pfElectrons = cms.EDFilter("CandPtrSelector",
+                                   src = electronCollection,
+                                   cut = cms.string("pt > 5 && isPF && gsfTrack.isAvailable() && gsfTrack.hitPattern().numberOfLostHits(\'MISSING_INNER_HITS\') < 2")
+                                   )
+        addToProcessAndTask("pfElectrons"+postfix, pfElectrons, process, task)
+        metUncSequence += getattr(process, "pfElectrons"+postfix)
+
+        #---------
+        # PFTaus :
+        #---------
+        pfTaus = cms.EDFilter("PATTauRefSelector",
+                              src = tauCollection,
+                              cut = cms.string('pt > 18.0 & abs(eta) < 2.6 & tauID("decayModeFinding") > 0.5 & isPFTau')
+                              )
+        addToProcessAndTask("pfTaus"+postfix, pfTaus, process, task)
+        metUncSequence += getattr(process, "pfTaus"+postfix)
+
+        #----------
+        # PFMuons :
+        #----------
+        pfMuons = cms.EDFilter("CandPtrSelector",
+                               src = muonCollection,
+                               cut = cms.string("pt > 5 && isPFMuon && abs(eta) < 2.4")
+                               )
+        addToProcessAndTask("pfMuons"+postfix, pfMuons, process, task)
+        metUncSequence += getattr(process, "pfMuons"+postfix)
+
+        #------------
+        # PFPhotons :
+        #------------
+        pfNoPileUp = cms.EDFilter("CandPtrSelector",
+                                  src = pfCandColection,
+                                  cut = cms.string("fromPV > 1")
+                                  )
+        addToProcessAndTask("pfNoPileUp"+postfix, pfNopileUp, process, task)
+        metUncSequence += getattr(process, "pfNoPileUp"+postfix)
+
+        pfPhotons = cms.EDFilter("CandPtrSelector",
+                                 src = cms.InputTag("pfNoPileUp"+postfix),
+                                 cut = cms.string("abs(pdgId) = 22")
+                                 )
+        addToProcessAndTask("pfPhotons"+postfix, pfPhotons, process, task)
+        metUncSequence += getattr(process, "pfPhotons"+postfix)
+
+        electronCollection = cms.InputTag("pfElectrons"+postfix)
+        muonCollection     = cms.InputTag("pfMuons"+postfix)
+        tauCollection      = cms.InputTag("pfTaus"+postfix)
+        photonCollection   = cms.InputTag("pfPhotons"+postfix)
+
+
         objectCollections = { "Jet":jetCollection,
                               "Electron":electronCollection,
                               "Photon":photonCollection,
