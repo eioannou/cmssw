@@ -865,9 +865,14 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         #------------
         # PFPhotons :
         #------------
+        if self._parameters["Puppi"].value:
+            cutforpfNoPileUp = cms.string("")
+        else:
+            cutforpfNoPileUp = cms.string("fromPV > 1")
+        
         pfNoPileUp = cms.EDFilter("CandPtrSelector",
                                   src = pfCandCollection,
-                                  cut = cms.string("fromPV > 1")
+                                  cut = cutforpfNoPileUp,
                                   )
         addToProcessAndTask("pfNoPileUp"+postfix, pfNoPileUp, process, task)
         metUncSequence += getattr(process, "pfNoPileUp"+postfix)
