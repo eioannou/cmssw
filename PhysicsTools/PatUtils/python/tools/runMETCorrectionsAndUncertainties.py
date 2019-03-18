@@ -862,7 +862,7 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         #---------------------------------------------------------------------
         # PFPhotons :
         #------------
-        if self._parameters["Puppi"].value:
+        if self._parameters["Puppi"].value or not self._parameters["onMiniAOD"].value:
             cutforpfNoPileUp = cms.string("")
         else:
             cutforpfNoPileUp = cms.string("fromPV > 1")
