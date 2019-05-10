@@ -278,6 +278,87 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         if self._parameters["Puppi"].value and not onMiniAOD:
             self.setParameter('reclusterJets',False)
 
+
+        # creating new selectedPatObjects collections with correct numberOfSource PF Candidates
+        # It is a temporary solution in order to disappear the discrepancy of significance
+        # and covariance matrix elements between AOD and MiniAOD step:
+        if not onMiniAOD:
+            task = getPatAlgosToolsTask(process)
+            patSelectedCollectionsFixPFCand = cms.Sequence() # sequence for new selectedPaObjects collections which have the correct numberOfSource PF Candidates             
+
+            if postfix != "NoHF" and not self._parameters["Puppi"].value:
+                # Offline Vertices
+                from PhysicsTools.PatAlgos.slimming.offlineSlimmedPrimaryVertices_cfi import offlineSlimmedPrimaryVertices
+                addToProcessAndTask("offlineSlimmedPrimaryVerticesFixPFCand"+postfix, offlineSlimmedPrimaryVertices.clone(), process, task)
+                patSelectedCollectionsFixPFCand += getattr(process, "offlineSlimmedPrimaryVerticesFixPFCand"+postfix)
+                #-------------------------------------------------------------------
+
+                # PF Candidates (particleFlow)
+                process.load("PhysicsTools.PatAlgos.slimming.packedPFCandidates_cff")
+                task.add(process.packedPFCandidatesTask)
+                addToProcessAndTask("particleFlowFixPFCand"+postfix, getattr(process, 'packedPFCandidates').clone(), process, task)
+                getattr(process, "particleFlowFixPFCand"+postfix).inputCollection = self._parameters["pfCandCollection"].value
+                getattr(process, "particleFlowFixPFCand"+postfix).inputVertices = cms.InputTag("offlineSlimmedPrimaryVerticesFixPFCand"+postfix)
+                patSelectedCollectionsFixPFCand += getattr(process, "particleFlowFixPFCand"+postfix)
+                self.setParameter('pfCandCollection', cms.InputTag('particleFlowFixPFCand'+postfix))
+          
+                # Taus
+                from PhysicsTools.PatAlgos.slimming.slimmedTaus_cfi import slimmedTaus
+                addToProcessAndTask("selectedPatTausFixPFCand"+postfix, slimmedTaus.clone(packedPFCandidates =cms.InputTag("particleFlowFixPFCand"+postfix)), process, task)
+                patSelectedCollectionsFixPFCand += getattr(process, "selectedPatTausFixPFCand"+postfix)
+                self.setParameter('tauCollection', cms.InputTag('selectedPatTausFixPFCand'+postfix))
+            #----------------------------------------------------------------------------------
+            if postfix == "NoHF" and self._parameters["Puppi"].value:
+                from PhysicsTools.PatAlgos.slimming.oflineSlimmedPrimaryVertices_cfi import offlineSlimmedPrimaryVertices
+                addToProcessAndTask("offlineSlimmedPrimaryVerticesForTaus"+postfix, offlineSlimmedPrimaryVertices.clone(), process, task)
+                patSelectedCollectionsFixPFCand += getattr(process, "offlineSlimmedPrimaryVerticesForTaus"+postfix)
+                process.load("PhysicsTools.PatAlgos.slimming.packedPFCandidates_cff")
+                task.add(process.packedPFCandidatesTask)
+                addToProcessAndTask("particleFlowForTaus"+postfix, getattr(process, 'packedPFCandidates').clone(), process, task)
+                getattr(process, "particleFlowForTaus"+postfix).inputVertices = cms.InputTag("offlineSlimmedPrimaryVerticesForTaus"+postfix)
+                patSelectedCollectionsFixPFCand += getattr(process, "particleFlowForTaus"+postfix)
+                from PhysicsTools.PatAlgos.slimming.slimmedTaus_cfi import slimmedTaus
+                addToProcessAndTask("selectedPatTausFixPFCand"+postfix, slimmedTaus.clone(packedPFCandidates = cms.InputTag("particleFlowForTaus"+postfix)), process, task)
+                patSelectedCollectionsFixPFCand += getattr(process, "selectedPatTausFixPFCand"+postfix)
+                self.setParameter('tauCollection', cms.InputTag('selectedPatTausFixPFCand'+postfix))
+            #-----------------------------------------------------------------------------------
+            
+            if not self._parameters["Puppi"].value:
+                # Pat Jets
+                from PhysicsTools.PatAlgos.selectionLayer1.jetSelector_cfi import selectedPatJets
+                addToProcessAndTask("selectedPatJetsFixPFCand"+postfix, selectedPatJets.clone(src=jetCollectionUnskimmed), process, task)
+                patSelectedCollectionsFixPFCand += getattr(process, "selectedPatJetsFixPFCand"+postfix)
+                from PhysicsTools.PatAlgos.slimming.slimmedJets_cfi import slimmedJets
+                addToProcessAndTask("patJetsFixPFCand"+postfix, slimmedJets.clone(src= cms.InputTag("selectedPatJetsFixPFCand"+postfix)), process, task)
+                patSelectedCollectionsFixPFCand += getattr(process, "patJetsFixPFCand"+postfix)
+                self.setParameter('jetCollectionUnskimmed', cms.InputTag('patJetsFixPFCand'+postfix))
+            #-----------------------------------------------------------------------------------
+
+            # Muons
+            from PhysicsTools.PatAlgos.slimming.slimmedMuons_cfi import slimmedMuons
+            addToProcessAndTask("selectedPatMuonsFixPFCand"+postfix, slimmedMuons.clone(), process, task)
+            patSelectedCollectionsFixPFCand += getattr(process, "selectedPatMuonsFixPFCand"+postfix)
+            self.setParameter('muonCollection', cms.InputTag('selectedPatMuonsFixPFCand'+postfix))
+            #------------------------------------------------------------------------------------
+
+            # Electrons
+            from PhysicsTools.PatAlgos.slimming.slimmedElectrons_cfi import slimmedElectrons
+            addToProcessAndTask("selectedPatElectronsFixPFCand"+postfix, slimmedElectrons.clone(), process, task)
+            patSelectedCollectionsFixPFCand += getattr(process, "selectedPatElectronsFixPFCand"+postfix)
+            self.setParameter('electronCollection', cms.InputTag('selectedPatElectronsFixPFCand'+postfix))
+            #-----------------------------------------------------------------------------------
+
+            # Photons
+            from PhysicsTools.PatAlgos.slimming.slimmedPhotons_cfi import slimmedPhotons
+            addToProcessAndTask("selectedPatPhotonsFixPFCand"+postfix, slimmedPhotons.clone(), process, task)
+            patSelectedCollectionsFixPFCand += getattr(process, "selectedPatPhotonsFixPFCand"+postfix)
+            self.setParameter('photonCollection', cms.InputTag('selectedPatPhotonsFixPFCand'+postfix))
+            #-----------------------------------------------------------------------------------
+
+            
+            
+            #======================= End of New Collections ====================================
+       
         self.apply(process)
 
 
@@ -606,6 +687,8 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         if "T1" in correctionLevel:
             getattr(process, "pat"+metType+"Met"+postfix).computeMETSignificance = cms.bool(self._parameters["computeMETSignificance"].value)
             getattr(process, "pat"+metType+"Met"+postfix).srcPFCands = self._parameters["pfCandCollection"].value
+            if not self._parameters["onMiniAOD"].value:
+                getattr(process, "pat"+metType+"Met"+postfix).srcLeptons = cms.VInputTag("selectedPatElectronsFixPFCand"+postfix, "selectedPatMuonsFixPFCand"+postfix, "selectedPatPhotonsFixPFCand"+postfix)
             if postfix=="NoHF":
                 getattr(process, "pat"+metType+"Met"+postfix).computeMETSignificance = cms.bool(False)
             if self._parameters["runOnData"].value:
@@ -622,6 +705,8 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
         if not self._parameters["onMiniAOD"].value and not postfix=="NoHF":
             getattr(process, "patMETs"+postfix).computeMETSignificance = cms.bool(self._parameters["computeMETSignificance"].value)
             getattr(process, "patMETs"+postfix).srcPFCands=self._parameters["pfCandCollection"].value
+            # added to fix covariance/significance by using new selected pat collections
+            getattr(process, "patMETs"+postfix).srcLeptons = cms.VInputTag("selectedPatElectronsFixPFCand"+postfix, "selectedPatMuonsFixPFCand"+postfix, "selectedPatPhotonsFixPFCand"+postfix)
 
         if hasattr(process, "patCaloMet"):
             getattr(process, "patCaloMet").computeMETSignificance = cms.bool(False)
@@ -1370,6 +1455,8 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
                 addToProcessAndTask('patMETs'+postfix, getattr(process,'patMETs' ).clone(), process, task)
                 getattr(process, "patMETs"+postfix).metSource = cms.InputTag("pfMetT1"+postfix)
                 getattr(process, "patMETs"+postfix).computeMETSignificance = cms.bool(self._parameters["computeMETSignificance"].value)
+                # added to fix covariance/significance by using new selected pat collections
+                getattr(process, "patMETs"+postfix).srcLeptons = cms.VInputTag("selectedPatElectronsFixPFCand"+postfix, "selectedPatMuonsFixPFCand"+postfix, "selectedPatPhotonsFixPFCand"+postfix)
                 if postfix=="NoHF":
                     getattr(process, "patMETs"+postfix).computeMETSignificance = cms.bool(False)
 
@@ -1479,12 +1566,13 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
             jetColName="ak4PFJetsCHS"
 
             pfCHS=None
-            if self._parameters["onMiniAOD"].value: 
-                pfCHS = cms.EDFilter("CandPtrSelector", src = pfCandCollection, cut = cms.string("fromPV"))
-                pfCandColl = cms.InputTag("pfNoPileUpJME"+postfix)
-                addToProcessAndTask("pfNoPileUpJME"+postfix, pfCHS, process, task)
-                patMetModuleSequence += getattr(process, "pfNoPileUpJME"+postfix)
-            else:
+            #if self._parameters["onMiniAOD"].value: # changed for fixing significance/covariance
+            pfCHS = cms.EDFilter("CandPtrSelector", src = pfCandCollection, cut = cms.string("fromPV"))
+            pfCandColl = cms.InputTag("pfNoPileUpJME"+postfix)
+            addToProcessAndTask("pfNoPileUpJME"+postfix, pfCHS, process, task)
+            patMetModuleSequence += getattr(process, "pfNoPileUpJME"+postfix)
+            #else: # changed for fixing singificance/covariance 
+            if not self._parameters["onMiniAOD"].value and postfix=="NoHF": # added to work with fixed significance/covariance  
                 addToProcessAndTask("tmpPFCandCollPtr"+postfix,
                                     cms.EDProducer("PFCandidateFwdPtrProducer",
                                                    src = pfCandCollection ),
@@ -1494,9 +1582,9 @@ class RunMETCorrectionsAndUncertainties(ConfigToolBase):
                 configtools.cloneProcessingSnippet(process, getattr(process,"pfNoPileUpJMESequence"), postfix, addToTask = True )
                 getattr(process, "pfPileUpJME"+postfix).PFCandidates = cms.InputTag("tmpPFCandCollPtr"+postfix)
                 addToProcessAndTask("pfNoPileUpJME"+postfix,
-                        getattr(process, "pfNoPileUpJME"+postfix).clone( 
-                        bottomCollection = cms.InputTag("tmpPFCandCollPtr"+postfix) ),
-                        process, task )
+                                    getattr(process, "pfNoPileUpJME"+postfix).clone( 
+                                        bottomCollection = cms.InputTag("tmpPFCandCollPtr"+postfix) ),
+                                    process, task )
                 pfCandColl = cms.InputTag("pfNoPileUpJME"+postfix)
                 patMetModuleSequence += getattr(process, "tmpPFCandCollPtr"+postfix)
                 patMetModuleSequence += getattr(process, "pfNoPileUpJME"+postfix)
